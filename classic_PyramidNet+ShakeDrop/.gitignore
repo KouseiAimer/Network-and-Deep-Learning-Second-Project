@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Keep code and lightweight results in Git, upload large weights to netdisk.
+weights/**/*.pt
+weights/**/*.pth
+weights/**/*.ckpt
