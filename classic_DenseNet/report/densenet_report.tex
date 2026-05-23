@@ -1,0 +1,133 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+
+\title{CIFAR-10 上 DenseNet-BC 实验报告}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{实验目的}
+
+本实验在 CIFAR-10 数据集上实现并训练 DenseNet-BC 模型，作为比传统 CNN 和 ResNet-110 更强的
+卷积神经网络基线。DenseNet 的核心思想是通过 dense connectivity 将每一层的输出传递给后续所有层，
+从而增强特征复用、改善梯度传播，并在参数量可控的情况下提升分类性能。
+
+\section{模型结构}
+
+本实验采用 DenseNet-BC-100-24。这里 B 表示 bottleneck design，即每个 dense layer 内部先使用
+$1\times1$ 卷积降低计算开销，再使用 $3\times3$ 卷积生成新特征；C 表示 compression，即在
+transition layer 中压缩通道数。模型共有 3 个 dense block，每个 block 包含 16 个 dense layer。
+增长率 growth rate 为 24，压缩率 compression 为 0.5。
+
+\begin{table}[H]
+    \centering
+    \caption{DenseNet-BC-100-24 网络结构}
+    \begin{tabularx}{\textwidth}{lllY}
+        \toprule
+        模块 & 主要设置 & 输出通道变化 & 说明 \\
+        \midrule
+        Input & CIFAR-10 RGB image & 3 & 输入尺寸为 $32\times32$ \\
+        Initial Conv & $3\times3$ Conv & $3\rightarrow48$ & 初始通道数为 $2k=48$ \\
+        Dense Block 1 & 16 layers, $k=24$ & $48\rightarrow432$ & 每层将新特征与已有特征拼接 \\
+        Transition 1 & $1\times1$ Conv + AvgPool & $432\rightarrow216$ & 压缩率 0.5，下采样到 $16\times16$ \\
+        Dense Block 2 & 16 layers, $k=24$ & $216\rightarrow600$ & 继续进行特征复用与拼接 \\
+        Transition 2 & $1\times1$ Conv + AvgPool & $600\rightarrow300$ & 压缩率 0.5，下采样到 $8\times8$ \\
+        Dense Block 3 & 16 layers, $k=24$ & $300\rightarrow684$ & 最后一个 dense block \\
+        Classifier & BN + ReLU + GlobalAvgPool + FC & $684\rightarrow10$ & 输出 10 类 logits \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+模型可训练参数量为 3,020,506。模型实现文件为 \path{classic_DenseNet/model.py}。
+
+\section{训练配置}
+
+\begin{table}[H]
+    \centering
+    \caption{训练配置}
+    \begin{tabularx}{\textwidth}{lY}
+        \toprule
+        项目 & 设置 \\
+        \midrule
+        数据集 & CIFAR-10，本地路径 \path{data/} \\
+        训练轮数 & 100 epochs \\
+        Batch size & 64 \\
+        优化器 & SGD，momentum = 0.9，Nesterov = True \\
+        初始学习率 & 0.1 \\
+        权重衰减 & $1\times10^{-4}$ \\
+        学习率策略 & CosineAnnealingLR \\
+        数据增强 & RandomCrop$(32,\mathrm{padding}=4)$，RandomHorizontalFlip，Cutout$(16)$ \\
+        归一化 & mean = $(0.4914, 0.4822, 0.4465)$，std = $(0.2470, 0.2435, 0.2616)$ \\
+        损失函数 & CrossEntropyLoss，label smoothing = 0.1 \\
+        Mixup & 未启用，mixup alpha = 0 \\
+        随机种子 & 42 \\
+        训练脚本 & \path{classic_DenseNet/train.py} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+本次训练共运行 100 个 epoch。日志记录的总训练时间为 22104.57 秒，约 368.41 分钟，即约
+6.14 小时；平均每个 epoch 约 221.05 秒，中位耗时约 210.67 秒。
+
+\section{实验结果}
+
+DenseNet-BC-100-24 在第 100 个 epoch 达到本次训练的最佳测试准确率。由于本次使用了
+label smoothing，训练和测试 loss 的绝对值会高于未平滑交叉熵下的数值，因此评价重点放在
+accuracy 和 test error 上。
+
+\begin{table}[H]
+    \centering
+    \caption{DenseNet-BC-100-24 在 CIFAR-10 上的实验结果}
+    \begin{tabular}{ll}
+        \toprule
+        指标 & 数值 \\
+        \midrule
+        最佳 epoch & 100 \\
+        最佳 epoch 的学习率 & $2.4672\times10^{-5}$ \\
+        Train loss & 0.5333 \\
+        Train accuracy & 98.71\% \\
+        Test loss & 0.5965 \\
+        Best test accuracy & 96.42\% \\
+        Test error & 3.58\% \\
+        参数量 & 3,020,506 \\
+        单个 checkpoint 大小 & 约 23.5 MB \\
+        总训练时间 & 约 6.14 小时 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+权重文件保存在 \path{classic_DenseNet/weights/densenet_bc_100_24/}，其中
+\path{best.pt} 为最佳测试准确率对应的 checkpoint，\path{last.pt} 为最后一个 epoch 结束后的
+checkpoint。由于第 100 个 epoch 同时也是最佳 epoch，二者对应的测试精度相同。后续提交时，模型权重
+应上传到网盘，并在最终报告中附上链接。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\linewidth]{../results/densenet_bc_100_24/curves.png}
+    \caption{DenseNet-BC-100-24 在 CIFAR-10 上的训练曲线}
+\end{figure}
+
+\section{结果分析}
+
+本次 DenseNet-BC-100-24 的最佳测试准确率为 96.42\%，测试错误率为 3.58\%。相比此前的
+ClassicCNN baseline（86.85\%）和 ResNet-110（93.40\%），DenseNet 取得了明显提升。这说明
+dense connectivity 带来的特征复用和梯度传播优势，在 CIFAR-10 分类任务中非常有效。
+
+从训练结果看，模型在训练集上的准确率达到 98.71\%，测试准确率达到 96.42\%，二者差距约为
+2.29 个百分点。Cutout、label smoothing 和权重衰减共同起到了较强的正则化作用，使模型在较高容量下
+仍保持了良好的泛化能力。测试准确率在最后若干 epoch 继续保持小幅提升，并在第 100 个 epoch 达到最佳，
+因此后续如果继续训练到 200 或 300 个 epoch，仍可能存在进一步提升空间。
+
+\end{document}
