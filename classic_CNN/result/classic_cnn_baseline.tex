@@ -1,0 +1,102 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+
+\title{CIFAR-10 传统 CNN Baseline 实验记录}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{模型结构}
+
+本实验首先实现一个传统卷积神经网络作为 CIFAR-10 分类任务的 baseline。模型采用经典的
+\texttt{Conv2d-ReLU-MaxPool2d-FullyConnected} 结构，不使用 Batch Normalization 和残差连接，
+以便后续与更复杂的网络结构进行对比。模型输入为 $3\times32\times32$ 图像，输出为 10 类 logits。
+可训练参数量为 666,538。
+
+\begin{table}[H]
+    \centering
+    \caption{ClassicCNN 网络结构}
+    \begin{tabularx}{\textwidth}{llY}
+        \toprule
+        模块 & 层设置 & 输出尺寸 \\
+        \midrule
+        Input & CIFAR-10 RGB image & $3\times32\times32$ \\
+        Block 1 & Conv $3\rightarrow32$, $3\times3$; ReLU; Conv $32\rightarrow32$, $3\times3$; ReLU & $32\times32\times32$ \\
+        Pool 1 & MaxPool $2\times2$; Dropout $p=0.3$ & $32\times16\times16$ \\
+        Block 2 & Conv $32\rightarrow64$, $3\times3$; ReLU; Conv $64\rightarrow64$, $3\times3$; ReLU & $64\times16\times16$ \\
+        Pool 2 & MaxPool $2\times2$; Dropout $p=0.3$ & $64\times8\times8$ \\
+        Block 3 & Conv $64\rightarrow128$, $3\times3$; ReLU; MaxPool $2\times2$ & $128\times4\times4$ \\
+        Classifier & Flatten; Linear $2048\rightarrow256$; ReLU; Dropout $p=0.5$; Linear $256\rightarrow10$ & 10 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\section{训练配置}
+
+\begin{table}[H]
+    \centering
+    \caption{Baseline 训练设置}
+    \begin{tabularx}{\textwidth}{lY}
+        \toprule
+        项目 & 设置 \\
+        \midrule
+        数据集 & CIFAR-10，本地路径 \texttt{data/} \\
+        数据增强 & RandomCrop$(32,\mathrm{padding}=4)$，RandomHorizontalFlip \\
+        归一化 & mean = $(0.4914, 0.4822, 0.4465)$，std = $(0.2470, 0.2435, 0.2616)$ \\
+        损失函数 & CrossEntropyLoss \\
+        优化器 & SGD，momentum = 0.9，Nesterov = True \\
+        初始学习率 & 0.1 \\
+        权重衰减 & $5\times10^{-4}$ \\
+        学习率策略 & CosineAnnealingLR，$T_{\max}=80$ \\
+        Batch size & 128 \\
+        训练轮数 & 80 epochs \\
+        随机种子 & 42 \\
+        训练脚本 & \path{classic_CNN/train.py} \\
+        模型文件 & \path{classic_CNN/model.py} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\section{实验结果}
+
+完整训练 80 轮后，模型在测试集上取得的最佳分类准确率为 86.85\%，对应测试错误率为 13.15\%。
+最优模型保存在 \path{classic_CNN/runs/baseline/best.pt}，训练日志保存在
+\path{classic_CNN/runs/baseline/history.csv}。
+
+\begin{table}[H]
+    \centering
+    \caption{ClassicCNN 在 CIFAR-10 上的结果}
+    \begin{tabular}{ll}
+        \toprule
+        指标 & 数值 \\
+        \midrule
+        最佳 epoch & 80 \\
+        Train loss & 0.4222 \\
+        Train accuracy & 85.53\% \\
+        Test loss & 0.3896 \\
+        Best test accuracy & 86.85\% \\
+        Test error & 13.15\% \\
+        总训练时间 & 1796.67 s，约 29.94 min \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\linewidth]{../runs/baseline/curves.png}
+    \caption{ClassicCNN baseline 的训练与测试曲线}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,30 @@
+{
+  "data_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\data",
+  "weights_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\classic_ResNet-110\\weights\\resnet110",
+  "results_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\classic_ResNet-110\\results\\resnet110",
+  "epochs": 200,
+  "batch_size": 128,
+  "lr": 0.1,
+  "momentum": 0.9,
+  "weight_decay": 0.0001,
+  "scheduler": "multistep",
+  "milestones": [
+    100,
+    150
+  ],
+  "gamma": 0.1,
+  "shortcut_type": "A",
+  "num_workers": 2,
+  "seed": 42,
+  "no_augment": false,
+  "download": false,
+  "amp": false,
+  "subset": 0,
+  "resume": null,
+  "save_every": 0,
+  "model_info": {
+    "model": "ResNetCIFAR",
+    "depth": 110,
+    "trainable_parameters": 1727962
+  }
+}

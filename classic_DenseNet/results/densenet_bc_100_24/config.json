@@ -1,0 +1,42 @@
+{
+  "data_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\data",
+  "weights_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\classic_DenseNet\\weights\\densenet_bc_100_24",
+  "results_dir": "C:\\Users\\30362\\Desktop\\\u5927\u4e09\u4e0b\\01 \u795e\u7ecf\u7f51\u7edc\u4e0e\u6df1\u5ea6\u5b66\u4e60\\03 labs\\PJ2_2026\\classic_DenseNet\\results\\densenet_bc_100_24",
+  "epochs": 100,
+  "batch_size": 64,
+  "depth": 100,
+  "growth_rate": 24,
+  "compression": 0.5,
+  "drop_rate": 0.0,
+  "lr": 0.1,
+  "momentum": 0.9,
+  "weight_decay": 0.0001,
+  "scheduler": "cosine",
+  "milestones": [
+    100,
+    150
+  ],
+  "gamma": 0.1,
+  "label_smoothing": 0.1,
+  "mixup_alpha": 0.0,
+  "cutout_length": 16,
+  "no_cutout": false,
+  "no_augment": false,
+  "num_workers": 2,
+  "seed": 42,
+  "download": false,
+  "amp": false,
+  "subset": 0,
+  "eval_max_batches": 0,
+  "resume": null,
+  "save_every": 0,
+  "model_info": {
+    "model": "DenseNetCIFAR",
+    "depth": 100,
+    "growth_rate": 24,
+    "compression": 0.5,
+    "bottleneck": true,
+    "layers_per_block": 16,
+    "trainable_parameters": 3020506
+  }
+}
