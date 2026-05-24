@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Checkpoints are large; upload them to netdisk instead of GitHub.
+final_result/**/*.pt
+final_result/**/*.pth
+final_result/**/*.ckpt

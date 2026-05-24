@@ -10,6 +10,7 @@ This repository contains CIFAR-10 experiments for the second project of Neural N
 - `classic_PyramidNet+ShakeDrop/`: advanced PyramidNet + ShakeDrop implementation with richer visualization tools.
 - `classic_WideResNet/`: strong WRN-28-10 implementation with CutMix/Cutout/EMA training recipe.
 - `my_DenseNet/`: final improved SE-DenseNet-BC network with ablations and interpretation scripts.
+- `my_final_CNN/`: final SE-stochastic-depth WideResNet CNN targeting about 97% CIFAR-10 accuracy.
 - `codes/VGG_BatchNorm/`: provided VGG/BatchNorm experiment code.
 - `project_2_2026_zh.md`: Chinese translation of the project handout.
 

@@ -1,0 +1,172 @@
+"""Plot and summarize FinalCNN training logs."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from pathlib import Path
+
+
+def read_history(history_path: Path) -> list[dict[str, float | str]]:
+    rows: list[dict[str, float | str]] = []
+    with history_path.open("r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            parsed: dict[str, float | str] = {}
+            for key, value in row.items():
+                if key is None or value is None or value == "":
+                    continue
+                try:
+                    parsed[key] = float(value)
+                except ValueError:
+                    parsed[key] = value
+            rows.append(parsed)
+    return rows
+
+
+def summarize_history(history_path: Path) -> dict[str, float | int]:
+    rows = read_history(history_path)
+    if not rows:
+        raise ValueError(f"No rows found in {history_path}")
+    best = max(rows, key=lambda row: float(row["test_acc"]))
+    final = rows[-1]
+    total_time = sum(float(row.get("time_sec", 0.0)) for row in rows)
+    summary: dict[str, float | int] = {
+        "best_epoch": int(float(best["epoch"])),
+        "best_test_acc": float(best["test_acc"]),
+        "best_test_error": 1.0 - float(best["test_acc"]),
+        "best_test_loss": float(best["test_loss"]),
+        "final_epoch": int(float(final["epoch"])),
+        "final_train_acc": float(final["train_acc"]),
+        "final_train_loss": float(final["train_loss"]),
+        "final_test_acc": float(final["test_acc"]),
+        "final_test_loss": float(final["test_loss"]),
+        "total_time_sec": total_time,
+        "total_time_min": total_time / 60.0,
+    }
+    if "clean_train_acc" in final:
+        summary["final_clean_train_acc"] = float(final["clean_train_acc"])
+        summary["final_clean_train_loss"] = float(final["clean_train_loss"])
+    return summary
+
+
+def write_summary(history_path: Path, output_path: Path) -> dict[str, float | int]:
+    summary = summarize_history(history_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as file:
+        json.dump(summary, file, indent=2)
+    return summary
+
+
+def plot_history(history_path: Path, output_path: Path, title: str = "FinalCNN on CIFAR-10") -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    rows = read_history(history_path)
+    epochs = [int(float(row["epoch"])) for row in rows]
+    train_loss = [float(row["train_loss"]) for row in rows]
+    test_loss = [float(row["test_loss"]) for row in rows]
+    train_acc = [float(row["train_acc"]) * 100.0 for row in rows]
+    test_acc = [float(row["test_acc"]) * 100.0 for row in rows]
+    lr = [float(row["lr"]) for row in rows]
+    has_clean_train = all("clean_train_acc" in row for row in rows)
+    clean_train_acc = [float(row["clean_train_acc"]) * 100.0 for row in rows] if has_clean_train else None
+
+    best_acc = []
+    running_best = 0.0
+    for acc in test_acc:
+        running_best = max(running_best, acc)
+        best_acc.append(running_best)
+
+    train_error = [100.0 - acc for acc in train_acc]
+    test_error = [100.0 - acc for acc in test_acc]
+    if clean_train_acc is not None:
+        clean_train_error = [100.0 - acc for acc in clean_train_acc]
+        gap = [test - train for train, test in zip(clean_train_error, test_error)]
+        gap_title = "Generalization Gap (Clean Train)"
+    else:
+        gap = [test - train for train, test in zip(train_error, test_error)]
+        gap_title = "Logged Gap (Mixed Train)"
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    axes[0, 0].plot(epochs, train_loss, label="mixed train")
+    axes[0, 0].plot(epochs, test_loss, label="test")
+    axes[0, 0].set_title("Loss")
+    axes[0, 0].set_xlabel("Epoch")
+    axes[0, 0].set_ylabel("Loss")
+    axes[0, 0].legend()
+    axes[0, 0].grid(alpha=0.25)
+
+    axes[0, 1].plot(epochs, train_acc, label="mixed train")
+    if clean_train_acc is not None:
+        axes[0, 1].plot(epochs, clean_train_acc, label="clean train")
+    axes[0, 1].plot(epochs, test_acc, label="test")
+    axes[0, 1].plot(epochs, best_acc, linestyle="--", label="best test")
+    axes[0, 1].set_title("Accuracy")
+    axes[0, 1].set_xlabel("Epoch")
+    axes[0, 1].set_ylabel("Accuracy (%)")
+    axes[0, 1].legend()
+    axes[0, 1].grid(alpha=0.25)
+
+    axes[0, 2].plot(epochs, lr)
+    axes[0, 2].set_title("Learning Rate")
+    axes[0, 2].set_xlabel("Epoch")
+    axes[0, 2].set_ylabel("LR")
+    axes[0, 2].set_yscale("log")
+    axes[0, 2].grid(alpha=0.25)
+
+    axes[1, 0].plot(epochs, train_error, label="mixed train")
+    if clean_train_acc is not None:
+        axes[1, 0].plot(epochs, clean_train_error, label="clean train")
+    axes[1, 0].plot(epochs, test_error, label="test")
+    axes[1, 0].set_title("Error")
+    axes[1, 0].set_xlabel("Epoch")
+    axes[1, 0].set_ylabel("Error (%)")
+    axes[1, 0].legend()
+    axes[1, 0].grid(alpha=0.25)
+
+    axes[1, 1].plot(epochs, gap, color="tab:purple")
+    axes[1, 1].axhline(0, color="black", linewidth=0.8)
+    axes[1, 1].set_title(gap_title)
+    axes[1, 1].set_xlabel("Epoch")
+    axes[1, 1].set_ylabel("Test error - train error (%)")
+    axes[1, 1].grid(alpha=0.25)
+
+    axes[1, 2].plot(epochs, test_error, color="tab:red")
+    axes[1, 2].set_title("Test Error Zoom")
+    axes[1, 2].set_xlabel("Epoch")
+    axes[1, 2].set_ylabel("Test error (%)")
+    axes[1, 2].grid(alpha=0.25)
+
+    fig.suptitle(title, fontsize=14)
+    fig.tight_layout()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=180)
+    plt.close(fig)
+
+
+def parse_args() -> argparse.Namespace:
+    root = Path(__file__).resolve().parent
+    default_dir = root / "final_result" / "final_swrn40_10"
+    parser = argparse.ArgumentParser(description="Plot FinalCNN training curves")
+    parser.add_argument("--history", type=Path, default=default_dir / "history.csv")
+    parser.add_argument("--output", type=Path, default=default_dir / "curves.png")
+    parser.add_argument("--summary", type=Path, default=default_dir / "summary.json")
+    parser.add_argument("--title", type=str, default="FinalCNN SE-SD-WRN-40-10 on CIFAR-10")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    plot_history(args.history, args.output, args.title)
+    summary = write_summary(args.history, args.summary)
+    print(f"Saved curves to: {args.output.resolve()}")
+    print(f"Saved summary to: {args.summary.resolve()}")
+    print(f"Best test accuracy: {summary['best_test_acc'] * 100:.2f}%")
+
+
+if __name__ == "__main__":
+    main()
