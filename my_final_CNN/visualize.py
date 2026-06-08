@@ -13,7 +13,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from model import build_model
+from model import build_model as build_wrn_model
+from model_v2 import build_model as build_densenet_model
 
 
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
@@ -63,7 +64,20 @@ def cfg(config: dict[str, object], key: str, default):
 
 
 def build_from_config(config: dict[str, object]) -> torch.nn.Module:
-    return build_model(
+    if "growth_rate" in config or str(config.get("model", "")).lower().find("dense") >= 0:
+        return build_densenet_model(
+            depth=int(cfg(config, "depth", 190)),
+            growth_rate=int(cfg(config, "growth_rate", 40)),
+            compression=float(cfg(config, "compression", 0.5)),
+            activation=str(cfg(config, "activation", "silu")),
+            se_reduction=int(cfg(config, "se_reduction", 16)),
+            stochastic_depth_rate=float(cfg(config, "stochastic_depth_rate", 0.2)),
+            classifier_hidden=int(cfg(config, "classifier_hidden", 512)),
+            classifier_dropout=float(cfg(config, "classifier_dropout", 0.2)),
+            drop_rate=float(cfg(config, "drop_rate", 0.0)),
+            transition_dropout=float(cfg(config, "transition_dropout", 0.0)),
+        )
+    return build_wrn_model(
         depth=int(cfg(config, "depth", 40)),
         widen_factor=int(cfg(config, "widen_factor", 10)),
         dropout=float(cfg(config, "dropout", 0.3)),

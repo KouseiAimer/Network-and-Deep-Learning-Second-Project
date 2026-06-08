@@ -60,6 +60,28 @@ Default outputs:
 my_DenseNet/final_result/final_se_densenet/
 ```
 
+## Reading the Training Log
+
+The default recipe uses CutMix, AutoAugment, Cutout, label smoothing, EMA, and stochastic depth. Therefore the logged `train acc` is measured on mixed and strongly augmented training batches, not on the clean CIFAR-10 training set. It can be much lower than `test acc` during training; this is expected and does not by itself mean that the model is broken.
+
+If you want an interpretable clean training accuracy, enable the optional clean train evaluation:
+
+```bash
+python my_DenseNet/train.py --amp --clean-train-eval
+```
+
+To reduce the extra cost, evaluate only a fixed number of clean train batches:
+
+```bash
+python my_DenseNet/train.py --amp --clean-train-eval --clean-train-max-batches 100
+```
+
+If the final 300-epoch result remains clearly below the classic DenseNet baseline, first try a less regularized run:
+
+```bash
+python my_DenseNet/train.py --amp --stochastic-depth-rate 0.1 --classifier-dropout 0.0 --mix-alpha 0.5 --output-dir my_DenseNet/final_result/final_se_densenet_lite_reg
+```
+
 ## If GPU Memory Is Tight
 
 Try smaller batch size first:

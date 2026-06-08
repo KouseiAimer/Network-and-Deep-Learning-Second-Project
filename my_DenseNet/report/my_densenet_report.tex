@@ -1,0 +1,139 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{CIFAR-10 上 MyDenseNet 最终实验报告}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{实验目的}
+
+本实验面向 CIFAR-10 分类任务，在经典 DenseNet-BC 基线之上构建最终改进网络。
+该网络记为 \textbf{SE-DenseNet-BC-190-40}，以 dense connectivity 作为核心，使中间特征能够被后续层重复利用；
+同时加入 Squeeze-and-Excitation（SE）通道注意力、stochastic depth、分类器 Dropout 以及强数据增强，以提升模型容量和泛化性能。
+
+\section{模型结构}
+
+本次最终模型采用 depth = 190、growth rate = 40、compression = 0.5 的 DenseNet-BC。
+对于 DenseNet-BC，网络深度满足 $6n+4=190$，因此每个 dense block 包含 31 个 bottleneck dense layer。
+每个 dense layer 通过 $1\times1$ 卷积降低计算开销，再通过 $3\times3$ 卷积产生 40 个新特征通道，
+并将新特征与已有特征在通道维度拼接。每个新增特征分支还使用 SE attention 与逐层增加的 DropPath 概率。
+
+\begin{table}[H]
+    \centering
+    \caption{SE-DenseNet-BC-190-40 网络结构}
+    \begin{tabularx}{\textwidth}{lllY}
+        \toprule
+        模块 & 设置 & 输出通道变化 & 说明 \\
+        \midrule
+        Input & CIFAR-10 RGB image & 3 & 输入尺寸为 $32\times32$ \\
+        Stem & $3\times3$ Conv + BN + SiLU & $3\rightarrow80$ & 初始通道数为 $2k$ \\
+        Dense Block 1 & 31 layers, $k=40$ & $80\rightarrow1320$ & 含 bottleneck、SE、DropPath \\
+        Transition 1 & $1\times1$ Conv + AvgPool & $1320\rightarrow660$ & compression = 0.5 \\
+        Dense Block 2 & 31 layers, $k=40$ & $660\rightarrow1900$ & 特征拼接与复用 \\
+        Transition 2 & $1\times1$ Conv + AvgPool & $1900\rightarrow950$ & 空间尺寸降至 $8\times8$ \\
+        Dense Block 3 & 31 layers, $k=40$ & $950\rightarrow2190$ & 最后一组 dense layer \\
+        Classifier & BN + SiLU + GAP + MLP & $2190\rightarrow512\rightarrow10$ & Dropout = 0.2 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+模型可训练参数量为 26,763,454。模型实现文件为 \path{my_DenseNet/model.py}。
+
+\section{训练配置}
+
+\begin{table}[H]
+    \centering
+    \caption{最终训练配置}
+    \begin{tabularx}{\textwidth}{lY}
+        \toprule
+        项目 & 设置 \\
+        \midrule
+        数据集 & CIFAR-10 \\
+        训练轮数 & 300 epochs \\
+        Batch size & 64 \\
+        优化器 & SGD，momentum = 0.9，Nesterov = True \\
+        初始学习率 / 最小学习率 & 0.1 / $1\times10^{-5}$ \\
+        学习率策略 & Cosine annealing \\
+        权重衰减 & $1\times10^{-4}$ \\
+        损失函数 & CrossEntropyLoss，label smoothing = 0.1 \\
+        激活函数 & SiLU \\
+        数据增强 & RandomCrop，RandomHorizontalFlip，AutoAugment，Cutout$(16)$，CutMix$(\alpha=1.0)$ \\
+        注意力 / 正则化 & SE reduction = 16，stochastic depth rate = 0.2，classifier dropout = 0.2 \\
+        参数滑动平均 & EMA decay = 0.999，测试使用 EMA 参数 \\
+        随机种子 & 42 \\
+        训练脚本 & \path{my_DenseNet/train.py} \\
+        结果目录 & \path{my_DenseNet/final_result/final_se_densenet/} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+日志记录的总训练时间为 62,484.21 秒，约 1,041.40 分钟，即约 17.36 小时；
+平均每个 epoch 约 208.28 秒，中位耗时约 208.10 秒。
+
+\section{实验结果}
+
+最佳测试准确率出现在第 282 个 epoch，此时模型已经进入 cosine 学习率退火的后期。
+第 300 个 epoch 的测试准确率仅比最佳 checkpoint 低 0.12 个百分点，说明模型后期结果较为稳定。
+
+\begin{table}[H]
+    \centering
+    \caption{MyDenseNet 在 CIFAR-10 上的最终结果}
+    \begin{tabular}{ll}
+        \toprule
+        指标 & 数值 \\
+        \midrule
+        最佳 epoch & 282 \\
+        最佳 epoch 学习率 & $9.9634\times10^{-4}$ \\
+        最佳 epoch train loss & 1.2680 \\
+        最佳 epoch train accuracy（混合训练 batch） & 66.73\% \\
+        最佳 epoch test loss & 0.5999 \\
+        Best test accuracy & \textbf{96.68\%} \\
+        Best test error & \textbf{3.32\%} \\
+        第 300 轮 train loss & 1.2674 \\
+        第 300 轮 train accuracy（混合训练 batch） & 66.41\% \\
+        第 300 轮 test loss & 0.5987 \\
+        第 300 轮 test accuracy & 96.56\% \\
+        参数量 & 26,763,454 \\
+        单个 checkpoint 大小 & 约 309.39 MB \\
+        总训练时间 & 约 17.36 小时 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{../final_result/final_se_densenet/curves.png}
+    \caption{SE-DenseNet-BC-190-40 在 CIFAR-10 上的训练曲线}
+\end{figure}
+
+\section{结果分析}
+
+本次 MyDenseNet 的最佳测试准确率达到 96.68\%，对应测试错误率为 3.32\%。
+相较 ClassicCNN（86.85\%）、ResNet-110（93.40\%）、DenseNet-BC-100-24（96.42\%）
+以及 WRN-28-10（96.63\%），本模型取得了目前实验中的最佳单模型结果。
+相比经典 DenseNet 基线提升 0.26 个百分点，说明增加网络容量、SE 通道注意力以及 EMA/强增强训练配方在本任务上有效。
+
+需要特别说明，日志中的 train accuracy 不是干净训练集上的准确率。训练阶段启用了 CutMix，
+每个输入和标签可能由两个样本按面积比例混合；同时还叠加 AutoAugment 与 Cutout。
+因此，训练日志中约 66\% 的加权混合标签准确率不能与干净测试集上的 96.68\% 直接比较，
+也不能据此判断网络欠拟合。最终评价应主要依据干净测试集 accuracy、error 及曲线的稳定性。
+
+权重文件保存在 \path{my_DenseNet/final_result/final_se_densenet/weights/}。
+\path{best.pt} 对应第 282 个 epoch 的最佳测试结果，\path{last.pt} 对应训练终点。
+两个权重文件体积较大，不适合上传至 GitHub，最终提交时应上传至网盘并在总报告中提供链接。
+
+\end{document}

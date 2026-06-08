@@ -1,0 +1,32 @@
+{
+  "mode": "activation",
+  "results_dir": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\Batch_Normalization\\results",
+  "output_dir": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\Batch_Normalization\\Visual\\figures",
+  "cache_dir": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\Batch_Normalization\\Visual\\cache",
+  "data_root": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\data",
+  "device": "auto",
+  "seed": 2020,
+  "checkpoint": "best",
+  "accuracy_lrs": [
+    0.001,
+    0.002
+  ],
+  "surface_lr": 0.001,
+  "surface_grid": 25,
+  "surface_radius": 0.45,
+  "surface_samples": 1024,
+  "surface_batch_size": 128,
+  "surface_z_percentile": 98.0,
+  "activation_lr": 0.001,
+  "activation_samples": 1024,
+  "activation_batch_size": 128,
+  "activation_layers": [
+    1,
+    4,
+    8
+  ],
+  "activation_max_channels": 48,
+  "activation_samples_per_channel": 48,
+  "num_workers": 0,
+  "force": false
+}

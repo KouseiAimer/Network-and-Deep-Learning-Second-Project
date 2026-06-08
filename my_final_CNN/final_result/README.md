@@ -1,10 +1,12 @@
 # FinalCNN 结果目录
 
-服务器训练产生的结果统一保存在本目录下。默认实验目录为：
+服务器训练产生的结果统一保存在本目录下。当前推荐的 v2 默认实验目录为：
 
 ```text
-my_final_CNN/final_result/final_swrn40_10/
+my_final_CNN/final_result/final_densenet_v2_seed42/
 ```
+
+此前 `final_swrn40_10/` 为 v1 WideResNet 路线的实验结果，最佳测试准确率较低，主要用于失败分析。
 
 建议保留并回传以下文件：
 

@@ -1,0 +1,140 @@
+{
+  "suite": "lr_sweep",
+  "epochs": 20,
+  "batch_size": 128,
+  "batch_sizes": [
+    32,
+    64,
+    128,
+    256
+  ],
+  "learning_rates": [
+    5e-05,
+    0.0001,
+    0.0005,
+    0.001,
+    0.002,
+    0.003,
+    0.005
+  ],
+  "gradient_lrs": [
+    0.001,
+    0.002
+  ],
+  "norm_lr": 0.001,
+  "batch_lr": 0.001,
+  "optimizer": "adam",
+  "momentum": 0.9,
+  "weight_decay": 0.0005,
+  "num_workers": 0,
+  "seed": 2020,
+  "device": "auto",
+  "data_root": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\data",
+  "results_dir": "C:\\Users\\30362\\Desktop\\大三下\\01 神经网络与深度学习\\03 labs\\PJ2_2026\\Batch_Normalization\\Enhanced\\results",
+  "n_train_items": -1,
+  "n_val_items": -1,
+  "augment": false,
+  "group_norm_groups": 32,
+  "no_save_model": false,
+  "track_grad_every": 1,
+  "planned_runs": [
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 5e-05,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr5e-05"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 5e-05,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr5e-05"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.0001,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p0001"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.0001,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p0001"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.0005,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p0005"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.0005,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p0005"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.001,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p001"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.001,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p001"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.002,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p002"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.002,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p002"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.003,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p003"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.003,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p003"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "no_bn",
+      "lr": 0.005,
+      "batch_size": 128,
+      "run_id": "lr_sweep_no_bn_bs128_lr0p005"
+    },
+    {
+      "suite": "lr_sweep",
+      "model_name": "bn",
+      "lr": 0.005,
+      "batch_size": 128,
+      "run_id": "lr_sweep_bn_bs128_lr0p005"
+    }
+  ]
+}

@@ -13,7 +13,12 @@ def read_history(history_path: Path) -> list[dict[str, float]]:
     with history_path.open("r", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            rows.append({key: float(value) for key, value in row.items()})
+            parsed = {}
+            for key, value in row.items():
+                if key is None or value is None or value == "":
+                    continue
+                parsed[key] = float(value)
+            rows.append(parsed)
     return rows
 
 
@@ -24,7 +29,7 @@ def summarize_history(history_path: Path) -> dict[str, float | int]:
     best = max(rows, key=lambda row: row["test_acc"])
     final = rows[-1]
     total_time = sum(row.get("time_sec", 0.0) for row in rows)
-    return {
+    summary = {
         "best_epoch": int(best["epoch"]),
         "best_test_acc": best["test_acc"],
         "best_test_error": 1.0 - best["test_acc"],
@@ -37,6 +42,10 @@ def summarize_history(history_path: Path) -> dict[str, float | int]:
         "total_time_sec": total_time,
         "total_time_min": total_time / 60.0,
     }
+    if "clean_train_acc" in final:
+        summary["final_clean_train_acc"] = final["clean_train_acc"]
+        summary["final_clean_train_loss"] = final["clean_train_loss"]
+    return summary
 
 
 def write_summary(history_path: Path, output_path: Path) -> dict[str, float | int]:
@@ -60,6 +69,8 @@ def plot_history(history_path: Path, output_path: Path, title: str = "MyDenseNet
     train_acc = [row["train_acc"] * 100.0 for row in rows]
     test_acc = [row["test_acc"] * 100.0 for row in rows]
     lr = [row["lr"] for row in rows]
+    has_clean_train = all("clean_train_acc" in row for row in rows)
+    clean_train_acc = [row["clean_train_acc"] * 100.0 for row in rows] if has_clean_train else None
 
     best_acc = []
     running_best = 0.0
@@ -69,10 +80,16 @@ def plot_history(history_path: Path, output_path: Path, title: str = "MyDenseNet
 
     train_error = [100.0 - acc for acc in train_acc]
     test_error = [100.0 - acc for acc in test_acc]
-    gap = [test - train for train, test in zip(train_error, test_error)]
+    if clean_train_acc is not None:
+        clean_train_error = [100.0 - acc for acc in clean_train_acc]
+        gap = [test - train for train, test in zip(clean_train_error, test_error)]
+        gap_title = "Generalization Gap (Clean Train)"
+    else:
+        gap = [test - train for train, test in zip(train_error, test_error)]
+        gap_title = "Logged Gap (Mixed Train)"
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 8))
-    axes[0, 0].plot(epochs, train_loss, label="train")
+    axes[0, 0].plot(epochs, train_loss, label="mixed train")
     axes[0, 0].plot(epochs, test_loss, label="test")
     axes[0, 0].set_title("Loss")
     axes[0, 0].set_xlabel("Epoch")
@@ -80,7 +97,9 @@ def plot_history(history_path: Path, output_path: Path, title: str = "MyDenseNet
     axes[0, 0].legend()
     axes[0, 0].grid(alpha=0.25)
 
-    axes[0, 1].plot(epochs, train_acc, label="train")
+    axes[0, 1].plot(epochs, train_acc, label="mixed train")
+    if clean_train_acc is not None:
+        axes[0, 1].plot(epochs, clean_train_acc, label="clean train")
     axes[0, 1].plot(epochs, test_acc, label="test")
     axes[0, 1].plot(epochs, best_acc, linestyle="--", label="best test")
     axes[0, 1].set_title("Accuracy")
@@ -96,7 +115,9 @@ def plot_history(history_path: Path, output_path: Path, title: str = "MyDenseNet
     axes[0, 2].set_yscale("log")
     axes[0, 2].grid(alpha=0.25)
 
-    axes[1, 0].plot(epochs, train_error, label="train")
+    axes[1, 0].plot(epochs, train_error, label="mixed train")
+    if clean_train_acc is not None:
+        axes[1, 0].plot(epochs, clean_train_error, label="clean train")
     axes[1, 0].plot(epochs, test_error, label="test")
     axes[1, 0].set_title("Error")
     axes[1, 0].set_xlabel("Epoch")
@@ -106,7 +127,7 @@ def plot_history(history_path: Path, output_path: Path, title: str = "MyDenseNet
 
     axes[1, 1].plot(epochs, gap, color="tab:purple")
     axes[1, 1].axhline(0, color="black", linewidth=0.8)
-    axes[1, 1].set_title("Generalization Gap")
+    axes[1, 1].set_title(gap_title)
     axes[1, 1].set_xlabel("Epoch")
     axes[1, 1].set_ylabel("Test error - train error (%)")
     axes[1, 1].grid(alpha=0.25)

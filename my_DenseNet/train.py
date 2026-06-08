@@ -125,6 +125,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--amp", action="store_true", help="Use CUDA mixed precision.")
     parser.add_argument("--subset", type=int, default=0, help="Use a small train subset for smoke tests.")
     parser.add_argument("--eval-max-batches", type=int, default=0, help="Limit eval batches for smoke tests.")
+    parser.add_argument(
+        "--clean-train-eval",
+        action="store_true",
+        help="Also evaluate the train set without augmentation/mixing each epoch. This is slower but easier to interpret.",
+    )
+    parser.add_argument(
+        "--clean-train-max-batches",
+        type=int,
+        default=0,
+        help="Limit clean train evaluation batches; 0 means full clean train set.",
+    )
     parser.add_argument("--resume", type=Path, default=None)
     parser.add_argument("--save-every", type=int, default=0, help="Save epoch_NNN.pt every N epochs.")
     return parser.parse_args()
@@ -201,6 +212,30 @@ def build_loaders(args: argparse.Namespace, device: torch.device) -> tuple[DataL
     train_loader = DataLoader(train_set, shuffle=True, **loader_kwargs)
     test_loader = DataLoader(test_set, shuffle=False, **loader_kwargs)
     return train_loader, test_loader
+
+
+def build_clean_train_loader(args: argparse.Namespace, device: torch.device) -> DataLoader:
+    clean_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+    ])
+    train_set = datasets.CIFAR10(
+        root=str(args.data_dir),
+        train=True,
+        download=args.download,
+        transform=clean_transform,
+    )
+    if args.subset > 0:
+        train_set = Subset(train_set, list(range(min(args.subset, len(train_set)))))
+
+    loader_kwargs = {
+        "batch_size": args.batch_size,
+        "num_workers": args.num_workers,
+        "pin_memory": device.type == "cuda",
+    }
+    if args.num_workers > 0:
+        loader_kwargs["persistent_workers"] = True
+    return DataLoader(train_set, shuffle=False, **loader_kwargs)
 
 
 def build_criterion(args: argparse.Namespace) -> nn.Module:
@@ -410,10 +445,24 @@ def save_checkpoint(
 
 
 def append_log(log_path: Path, row: dict[str, float | int]) -> None:
-    is_new = not log_path.exists()
+    fieldnames = list(row.keys())
+    existing_rows: list[dict[str, str]] = []
+    if log_path.exists():
+        with log_path.open("r", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            fieldnames = list(reader.fieldnames or fieldnames)
+            existing_rows = list(reader)
+        extra_fields = [key for key in row.keys() if key not in fieldnames]
+        if extra_fields:
+            fieldnames.extend(extra_fields)
+            with log_path.open("w", newline="", encoding="utf-8") as file:
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(existing_rows)
+
     with log_path.open("a", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=list(row.keys()))
-        if is_new:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        if not existing_rows and log_path.stat().st_size == 0:
             writer.writeheader()
         writer.writerow(row)
 
@@ -434,6 +483,7 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = build_loaders(args, device)
+    clean_train_loader = build_clean_train_loader(args, device) if args.clean_train_eval else None
     model = build_model(
         depth=args.depth,
         growth_rate=args.growth_rate,
@@ -492,6 +542,16 @@ def main() -> None:
             ema,
         )
         eval_model = ema.module if ema is not None else model
+        clean_train_loss = None
+        clean_train_acc = None
+        if clean_train_loader is not None:
+            clean_train_loss, clean_train_acc = evaluate(
+                eval_model,
+                clean_train_loader,
+                criterion,
+                device,
+                args.clean_train_max_batches,
+            )
         test_loss, test_acc = evaluate(eval_model, test_loader, criterion, device, args.eval_max_batches)
         elapsed = time.time() - tic
 
@@ -504,6 +564,9 @@ def main() -> None:
             "test_acc": test_acc,
             "time_sec": elapsed,
         }
+        if clean_train_loss is not None and clean_train_acc is not None:
+            row["clean_train_loss"] = clean_train_loss
+            row["clean_train_acc"] = clean_train_acc
         append_log(log_path, row)
 
         if test_acc > best_acc or (epoch == start_epoch and not (weights_dir / "best.pt").exists()):
@@ -517,6 +580,9 @@ def main() -> None:
             scheduler.step()
 
         save_checkpoint(weights_dir / "last.pt", model, optimizer, scheduler, epoch, best_acc, args, ema)
+        clean_part = ""
+        if clean_train_acc is not None:
+            clean_part = f" | clean train acc {clean_train_acc * 100:.2f}%"
         print(
             f"Epoch {epoch:03d}/{args.epochs} | "
             f"lr {lr:.5f} | "
@@ -524,6 +590,7 @@ def main() -> None:
             f"test loss {test_loss:.4f} acc {test_acc * 100:.2f}% | "
             f"best {best_acc * 100:.2f}% | "
             f"{elapsed:.1f}s"
+            f"{clean_part}"
         )
 
     title = f"MyDenseNet-{args.depth}-{args.growth_rate}-{args.activation} on CIFAR-10"

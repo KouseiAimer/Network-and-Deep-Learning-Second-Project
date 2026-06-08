@@ -1,0 +1,125 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{CIFAR-10 上 WideResNet 实验报告}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{实验目的}
+
+本实验在 CIFAR-10 数据集上训练 WideResNet，作为一个稳定且强力的卷积神经网络基线。与继续增加网络深度的
+ResNet-110 不同，WideResNet 通过增加残差块通道宽度来提升模型容量，在 CIFAR-10 这类小分辨率图像分类任务上通常更容易优化，并能与强数据增强策略形成较好的配合。
+
+\section{模型结构}
+
+本次最终运行采用 WRN-28-10，即网络深度为 28，宽度因子为 10。CIFAR 版 WideResNet 的主体由 3 个 residual group 构成，每个 group 包含 4 个 residual block。每个 residual block 内部包含两层 $3\times3$ 卷积，并配合 BatchNorm、ReLU 和 Dropout。最终通过全局平均池化和全连接层输出 10 类 logits。
+
+\begin{table}[H]
+    \centering
+    \caption{WRN-28-10 网络结构}
+    \begin{tabularx}{\textwidth}{lllY}
+        \toprule
+        模块 & 主要设置 & 输出通道 & 说明 \\
+        \midrule
+        Input & CIFAR-10 RGB image & 3 & 输入尺寸为 $32\times32$ \\
+        Initial Conv & $3\times3$ Conv & 16 & 保持空间分辨率不变 \\
+        Group 1 & 4 residual blocks & 160 & 每个 block 包含两层 $3\times3$ 卷积 \\
+        Group 2 & 4 residual blocks, stride 2 & 320 & 第一个 block 下采样到 $16\times16$ \\
+        Group 3 & 4 residual blocks, stride 2 & 640 & 第一个 block 下采样到 $8\times8$ \\
+        Classifier & BN + ReLU + GlobalAvgPool + FC & 10 & 输出 CIFAR-10 十分类 logits \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+本次最终模型的可训练参数量为 36,479,194。实现文件为 \path{classic_WideResNet/model.py}。代码中还保留了 SE attention 和 stochastic depth 的可选开关，但本次最终结果没有启用这两个扩展。
+
+\section{训练配置}
+
+\begin{table}[H]
+    \centering
+    \caption{训练配置}
+    \begin{tabularx}{\textwidth}{lY}
+        \toprule
+        项目 & 设置 \\
+        \midrule
+        数据集 & CIFAR-10，本地数据目录 \path{data/} \\
+        训练轮数 & 200 epochs \\
+        Batch size & 128 \\
+        优化器 & SGD，momentum = 0.9，weight decay = $5\times10^{-4}$ \\
+        初始学习率 & 0.1 \\
+        最小学习率 & $1\times10^{-5}$ \\
+        学习率策略 & Cosine annealing \\
+        损失函数 & CrossEntropyLoss，label smoothing = 0.1 \\
+        数据增强 & RandomCrop，RandomHorizontalFlip，RandAugment，Cutout$(16)$，CutMix$(\alpha=1.0)$ \\
+        Dropout & 0.3 \\
+        EMA & decay = 0.999 \\
+        随机种子 & 42 \\
+        AMP & 本次记录中未启用 \\
+        训练脚本 & \path{classic_WideResNet/train.py} \\
+        结果目录 & \path{classic_WideResNet/final_result/wrn28_10/} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+本次训练共运行 200 个 epoch。日志记录的总训练时间为 12,402.88 秒，约 206.71 分钟，即约 3.45 小时；平均每个 epoch 约 62.01 秒，中位数约 62.22 秒。
+
+\section{实验结果}
+
+最终训练中，最佳测试准确率出现在第 195 个 epoch。第 200 个 epoch 的测试准确率与最佳结果只相差 0.04 个百分点，说明模型后期已经进入稳定收敛区间。
+
+\begin{table}[H]
+    \centering
+    \caption{WRN-28-10 在 CIFAR-10 上的实验结果}
+    \begin{tabular}{ll}
+        \toprule
+        指标 & 数值 \\
+        \midrule
+        最佳 epoch & 195 \\
+        最佳 epoch 的学习率 & $2.3188\times10^{-4}$ \\
+        最佳 train loss & 1.2426 \\
+        最佳 train accuracy（混合增强 batch 日志） & 66.57\% \\
+        最佳 test loss & 0.6053 \\
+        Best test accuracy & 96.63\% \\
+        Best test error & 3.37\% \\
+        第 200 轮 train loss & 1.2320 \\
+        第 200 轮 train accuracy（混合增强 batch 日志） & 67.22\% \\
+        第 200 轮 test loss & 0.6050 \\
+        第 200 轮 test accuracy & 96.59\% \\
+        参数量 & 36,479,194 \\
+        单个最佳 checkpoint 大小 & 约 391.50 MB \\
+        总训练时间 & 约 3.45 小时 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\linewidth]{../final_result/wrn28_10/curves.png}
+    \caption{WRN-28-10 在 CIFAR-10 上的训练曲线}
+\end{figure}
+
+权重文件保存在 \path{classic_WideResNet/final_result/wrn28_10/weights/}，其中 \path{best.pt} 对应最佳测试准确率，\path{last.pt} 对应最后一个 epoch。由于 checkpoint 文件较大，不适合直接提交到 GitHub，后续提交时应将权重上传到网盘，并在最终说明中附上链接。
+
+\section{结果分析}
+
+WRN-28-10 的最佳测试准确率为 96.63\%，测试错误率为 3.37\%。相比此前的 ClassicCNN baseline（86.85\%）、ResNet-110（93.40\%）和 DenseNet-BC-100-24（96.42\%），WideResNet 在本次实验中取得了最高的测试准确率。其中相对 DenseNet 的提升为 0.21 个百分点，虽然幅度不大，但结果更稳定，最后若干个 epoch 的测试准确率都保持在 96.5\% 以上。
+
+需要注意的是，本实验启用了 CutMix、RandAugment、Cutout 和 label smoothing，因此日志中的 train accuracy 是在强增强和混合标签 batch 上统计得到的，并不能等同于在原始训练集上的干净分类准确率。它明显低于 test accuracy 并不表示模型欠拟合，而是 CutMix 会将一张图像和另一张图像按区域混合，同时目标标签也被线性混合，常规的单标签 accuracy 在这种训练 batch 上天然偏低。因此，本实验更适合以 test accuracy、test error 以及收敛曲线稳定性作为主要评价指标。
+
+整体来看，WideResNet 的宽通道残差结构提供了较强的特征表达能力，而 CutMix、Cutout、label smoothing 和 EMA 共同提高了泛化能力。该模型可以作为后续最终网络设计的强力参考基线；如果继续追求小幅提升，可以在相同训练框架下尝试启用 SE attention、stochastic depth，或将训练轮数扩展到 300 epochs。
+
+\end{document}
