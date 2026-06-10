@@ -16,4 +16,10 @@ This repository contains CIFAR-10 experiments for the second project of Neural N
 
 ## Large Files
 
-Datasets and model checkpoints are intentionally excluded from Git. Upload trained weights such as `best.pt` and `last.pt` to a netdisk and include the links in the final report.
+Datasets and model checkpoints are intentionally excluded from Git. All trained checkpoints are uploaded to ModelScope:
+
+```text
+https://modelscope.cn/models/KouseiAimer/Network-and-Deep-Learning-Second-Project
+```
+
+The ModelScope repository preserves the same relative paths as this GitHub repository, so a checkpoint such as `Ablation/results/final/best_from_ablation/weights/best.pt` on ModelScope corresponds to the model code and configs under the same path in this repo.

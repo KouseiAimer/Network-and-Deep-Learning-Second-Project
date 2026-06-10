@@ -1,8 +1,8 @@
 {
   "depth": 190,
-  "growth_rate": 40,
+  "growth_rate": 24,
   "compression": 0.5,
-  "activation": "silu",
+  "activation": "gelu",
   "se_reduction": 16,
   "stochastic_depth_rate": 0.2,
   "drop_rate": 0.0,
@@ -30,8 +30,8 @@
   "mix_alpha": 1.0,
   "ema_decay": 0.999,
   "data_dir": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/data",
-  "output_dir": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/ablation/baseline/baseline_d190_k40_silu_ce_sgd",
-  "epochs": 50,
+  "output_dir": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation",
+  "epochs": 300,
   "batch_size": 64,
   "num_workers": 4,
   "seed": 42,
@@ -45,12 +45,12 @@
   "model_info": {
     "model": "MyDenseNet",
     "depth": 190,
-    "growth_rate": 40,
+    "growth_rate": 24,
     "compression": 0.5,
     "layers_per_block": 31,
-    "activation": "silu",
+    "activation": "gelu",
     "se_reduction": 16,
     "stochastic_depth_rate": 0.2,
-    "trainable_parameters": 26763454
+    "trainable_parameters": 9978062
   }
 }

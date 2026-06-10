@@ -1,0 +1,7 @@
+{
+  "run_dir": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation",
+  "curves": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation/curves.png",
+  "summary": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation/summary.json",
+  "visualizations": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation/visualizations",
+  "loss_landscape": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/final/best_from_ablation/loss_landscape"
+}

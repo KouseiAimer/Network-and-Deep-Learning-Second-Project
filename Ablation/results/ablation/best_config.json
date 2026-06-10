@@ -1,0 +1,150 @@
+{
+  "suite": "report",
+  "ablation_epochs": 50,
+  "summary_csv": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/ablation/summary.csv",
+  "base_config": {
+    "depth": 190,
+    "growth_rate": 40,
+    "compression": 0.5,
+    "activation": "silu",
+    "se_reduction": 16,
+    "stochastic_depth_rate": 0.2,
+    "drop_rate": 0.0,
+    "transition_dropout": 0.0,
+    "classifier_hidden": 512,
+    "classifier_dropout": 0.2,
+    "loss": "ce",
+    "label_smoothing": 0.1,
+    "focal_gamma": 2.0,
+    "optimizer": "sgd",
+    "lr": 0.1,
+    "min_lr": 1e-05,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "scheduler": "cosine",
+    "milestones": [
+      150,
+      225
+    ],
+    "gamma": 0.1,
+    "augment": "autoaugment",
+    "cutout_length": 16,
+    "no_cutout": false,
+    "mix_mode": "cutmix",
+    "mix_alpha": 1.0,
+    "ema_decay": 0.999
+  },
+  "recommended_config": {
+    "depth": 190,
+    "growth_rate": 24,
+    "compression": 0.5,
+    "activation": "gelu",
+    "se_reduction": 16,
+    "stochastic_depth_rate": 0.2,
+    "drop_rate": 0.0,
+    "transition_dropout": 0.0,
+    "classifier_hidden": 512,
+    "classifier_dropout": 0.2,
+    "loss": "ce",
+    "label_smoothing": 0.1,
+    "focal_gamma": 2.0,
+    "optimizer": "sgd",
+    "lr": 0.1,
+    "min_lr": 1e-05,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "scheduler": "cosine",
+    "milestones": [
+      150,
+      225
+    ],
+    "gamma": 0.1,
+    "augment": "autoaugment",
+    "cutout_length": 16,
+    "no_cutout": false,
+    "mix_mode": "cutmix",
+    "mix_alpha": 1.0,
+    "ema_decay": 0.999
+  },
+  "best_single_experiment": {
+    "experiment": "activation_gelu",
+    "group": "activation",
+    "description": "Use GELU instead of SiLU.",
+    "status": "ok",
+    "message": "",
+    "best_epoch": 50,
+    "best_test_acc": 0.9313,
+    "best_test_error": 0.06869999999999998,
+    "best_test_loss": 0.7076017265319824,
+    "final_epoch": 50,
+    "final_test_acc": 0.9313,
+    "final_test_loss": 0.7076017265319824,
+    "total_time_min": 147.5212381998698,
+    "trainable_parameters": 26763454,
+    "output_dir": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/ablation/activation/activation_gelu",
+    "history": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/ablation/activation/activation_gelu/history.csv",
+    "summary": "/inspire/hdd/project/fdu-aidake-cfff/public/liangyanpeng/Network-and-Deep-Learning-Second-Project/Ablation/results/ablation/activation/activation_gelu/summary.json"
+  },
+  "best_single_config": {
+    "depth": 190,
+    "growth_rate": 40,
+    "compression": 0.5,
+    "activation": "gelu",
+    "se_reduction": 16,
+    "stochastic_depth_rate": 0.2,
+    "drop_rate": 0.0,
+    "transition_dropout": 0.0,
+    "classifier_hidden": 512,
+    "classifier_dropout": 0.2,
+    "loss": "ce",
+    "label_smoothing": 0.1,
+    "focal_gamma": 2.0,
+    "optimizer": "sgd",
+    "lr": 0.1,
+    "min_lr": 1e-05,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "scheduler": "cosine",
+    "milestones": [
+      150,
+      225
+    ],
+    "gamma": 0.1,
+    "augment": "autoaugment",
+    "cutout_length": 16,
+    "no_cutout": false,
+    "mix_mode": "cutmix",
+    "mix_alpha": 1.0,
+    "ema_decay": 0.999
+  },
+  "group_choices": [
+    {
+      "group": "activation",
+      "selected_experiment": "activation_gelu",
+      "best_test_acc": 0.9313,
+      "applied_overrides": {
+        "activation": "gelu"
+      }
+    },
+    {
+      "group": "capacity",
+      "selected_experiment": "capacity_growth24",
+      "best_test_acc": 0.9164,
+      "applied_overrides": {
+        "growth_rate": 24
+      }
+    },
+    {
+      "group": "loss",
+      "selected_experiment": "baseline_d190_k40_silu_ce_sgd",
+      "best_test_acc": 0.9113,
+      "applied_overrides": {}
+    },
+    {
+      "group": "optimizer",
+      "selected_experiment": "baseline_d190_k40_silu_ce_sgd",
+      "best_test_acc": 0.9113,
+      "applied_overrides": {}
+    }
+  ]
+}

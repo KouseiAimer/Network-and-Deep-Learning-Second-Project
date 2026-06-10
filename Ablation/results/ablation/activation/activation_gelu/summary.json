@@ -1,0 +1,13 @@
+{
+  "best_epoch": 50,
+  "best_test_acc": 0.9313,
+  "best_test_error": 0.06869999999999998,
+  "best_test_loss": 0.7076017265319824,
+  "final_epoch": 50,
+  "final_train_acc": 0.60856005859375,
+  "final_train_loss": 1.4252436935424804,
+  "final_test_acc": 0.9313,
+  "final_test_loss": 0.7076017265319824,
+  "total_time_sec": 8851.274291992188,
+  "total_time_min": 147.5212381998698
+}

@@ -1,6 +1,8 @@
 # Local editor/cache files
 .vscode/
 __pycache__/
+.ipynb_checkpoints/
+.ms_upload_cache
 *.py[cod]
 *.pyo
 

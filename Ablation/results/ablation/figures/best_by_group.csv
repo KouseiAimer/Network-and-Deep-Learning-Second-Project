@@ -1,0 +1,6 @@
+group,best_experiment,best_test_acc,best_test_error,best_epoch,trainable_parameters
+activation,activation_gelu,93.13,6.87,50,26763454
+baseline,baseline_d190_k40_silu_ce_sgd,91.13,8.87,50,26763454
+capacity,capacity_growth24,91.64,8.36,50,9978062
+loss,loss_focal,89.35,10.65,50,26763454
+optimizer,optimizer_adamw,90.53,9.47,50,26763454
